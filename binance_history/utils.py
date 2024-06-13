@@ -170,11 +170,9 @@ def load_klines(data_tz: str, content: bytes) -> DataFrame:
     with zipfile.ZipFile(io.BytesIO(content)) as zipf:
         csv_name = zipf.namelist()[0]
         with zipf.open(csv_name, "r") as csvfile:
-            df = pd.read_csv(
-                csvfile,
-                usecols=range(9),
-                header=None,
-                names=[
+            df = pd.read_csv(csvfile)
+            if len(df.columns) == 9:
+                df.columns = [
                     "open_ms",
                     "open",
                     "high",
@@ -184,8 +182,26 @@ def load_klines(data_tz: str, content: bytes) -> DataFrame:
                     "close_ms",
                     "quote_volume",
                     "trades",
-                ],
-            )
+                ]
+            elif len(df.columns) == 12:
+                df.columns = [
+                    "open_ms",
+                    "open",
+                    "high",
+                    "low",
+                    "close",
+                    "volume",
+                    "close_ms",
+                    "quote_volume",
+                    "trades",
+                    "taker_buy_base_volume",
+                    "taker_buy_quote_volume",
+                    "ignore",
+                ]
+                del df['taker_buy_base_volume']
+                del df['taker_buy_quote_volume']
+                del df['ignore']
+
             df["open_datetime"] = pd.to_datetime(
                 df.open_ms, unit="ms", utc=True
             ).dt.tz_convert(data_tz)
